@@ -25,7 +25,7 @@ namespace CircuitBreakerSample
     // Azure Storage Circuit Breaker Demo
 
     // INSTRUCTIONS
-    // Please see the ReadMe.md file for an overview
+    // Please see the README.md file for an overview
     // explaining this application and how to run it. 
 
     public class Program
@@ -109,7 +109,7 @@ namespace CircuitBreakerSample
 
             // Before proceeding, wait until the blob has been replicated to the secondary data center. 
             // Loop and check for the presence of the blob once a second
-            //   until it hits 60 seconds or it finds it. If it doesn't find it, kick it out.
+            //   until it hits 60 seconds or it finds it.
             int counter = 0;
             while (counter < 60)
             {
@@ -136,7 +136,7 @@ namespace CircuitBreakerSample
             blobClient.DefaultRequestOptions.LocationMode = LocationMode.PrimaryThenSecondary;
 
             //**************INSTRUCTIONS****************
-            //To perform the test, first put your storage account name and key in App.config.
+            // To perform the test, first put your storage account name and key in App.config.
             // Every time it calls DownloadToFileAsync, it will hit the ResponseReceived event. 
 
             // Next, run this app in Visual Studio. While this loop is running, pause the program in Visual Studio, 
@@ -169,7 +169,7 @@ namespace CircuitBreakerSample
                 try
                 {
                     // Hook up the event handlers for the Retry event and the Request Completed event
-                    // These events are used to triggers the change from primary to secondary and back.
+                    // These events are used to trigger the change from primary to secondary and back.
                     operation_context.Retrying += Operation_context_Retrying;
                     operation_context.RequestCompleted += Operation_context_RequestCompleted;
 
