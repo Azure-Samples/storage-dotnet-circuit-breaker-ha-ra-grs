@@ -55,17 +55,9 @@ namespace CircuitBreakerSample
             {
                 System.Diagnostics.Debug.Print("Error thrown = ", ex.ToString());
             }
-            finally
-            {
-                if (container != null)
-                {
-                    // Clean up after yourself.
-                    container.DeleteIfExists();
-                }
-            }
 
-            Console.WriteLine("Press any key to exit.");
-            Console.ReadLine();
+            Console.WriteLine("\nPress any key to exit.");
+            Console.ReadKey();
         }
 
         /// <summary>
@@ -152,8 +144,10 @@ namespace CircuitBreakerSample
             //    try to switch back to the primary. 
             //    After seeing that happen, pause this again and remove the intercepting Fiddler code. 
             //    Then you'll see it return to the primary and finish. 
-            //Console.WriteLine("\nPress the space bar to pause the application");
-            for (int i = 0; i < 1000; i++ )
+
+            Console.WriteLine("\nPress any key to pause the application");
+
+            for (int i = 0; i < 1000; i++)
             {
                 if (blobClient.DefaultRequestOptions.LocationMode == LocationMode.SecondaryOnly)
                 {
@@ -166,9 +160,7 @@ namespace CircuitBreakerSample
 
                 // Set up an operation context for the downloading the blob.
                 OperationContext operation_context = new OperationContext();
-                CancellationTokenSource cancellationSource = new CancellationTokenSource();
-                Task task;
-                ConsoleKeyInfo keyinfo;
+
                 try
                 {
                     // Hook up the event handlers for the Retry event and the Request Completed event
@@ -177,17 +169,16 @@ namespace CircuitBreakerSample
                     operation_context.RequestCompleted += Operation_context_RequestCompleted;
 
                     // Download the file.
-                    task = blockBlob.DownloadToFileAsync(string.Format("./CopyOf{0}", ImageToUpload), FileMode.Create, null, null, operation_context);
+                    Task task = blockBlob.DownloadToFileAsync(string.Format("./CopyOf{0}", ImageToUpload), FileMode.Create, null, null, operation_context);
+
+                    // Allow user input to pause the application to implement simulated failures
                     while (!task.IsCompleted)
                     {
                         if (Console.KeyAvailable)
                         {
-                            keyinfo = Console.ReadKey(true);
-                            if (keyinfo.Key == ConsoleKey.Spacebar)
-                            {
-                                Console.Write("Press space bar to resume.");
-                                Console.ReadKey();
-                            }
+                            Console.ReadKey(true);
+                            Console.WriteLine("\nPress any key to resume.");
+                            Console.ReadKey();
                         }
                     }
                     await task;
@@ -218,6 +209,8 @@ namespace CircuitBreakerSample
                     operation_context.RequestCompleted -= Operation_context_RequestCompleted;
                 }
             }
+            // Clean up after ourselves
+            container.DeleteIfExists();
         }
 
         /// RequestCompleted Event handler 
