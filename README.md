@@ -41,7 +41,7 @@ capture the events and switch back and forth.
 
 4. Start the application in Visual Studio. It displays a console window showing the count of requests made against the storage service to download the file, and tells whether you are accessing the primary or secondary endpoint. You can also see this in the Fiddler trace. 
 
-5. Press space bar to pause the application. 
+5. Press any key to pause the application. 
 
 6. Go to Fiddler and select Rules > Customize Rules. Look for the OnBeforeResponse function and insert this code. (An example of the OnBeforeResponse method is included in the project in the Fiddler_script.txt file.)
 
