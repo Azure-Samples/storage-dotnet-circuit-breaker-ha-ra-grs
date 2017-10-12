@@ -41,7 +41,7 @@ capture the events and switch back and forth.
 
 4. Start the application in Visual Studio. It displays a console window showing the count of requests made against the storage service to download the file, and tells whether you are accessing the primary or secondary endpoint. You can also see this in the Fiddler trace. 
 
-5. Pause the application. 
+5. Press space bar to pause the application. 
 
 6. Go to Fiddler and select Rules > Customize Rules. Look for the OnBeforeResponse function and insert this code. (An example of the OnBeforeResponse method is included in the project in the Fiddler_script.txt file.)
 
@@ -52,7 +52,7 @@ capture the events and switch back and forth.
 
 	Change YOURSTORAGEACCOUNTNAME to your storage account name, and uncomment out this code. Save your changes to the script. 
 
-7. Return to your application and Continue running it. In the output, you will see the errors against primary that come from the intercept in Fiddler. Then you will see the switch to secondary storage. After the number of reads exceeds the threshold, you will see it switch back to primary. It does this repeatedly. 
+7. Return to your application and press any key to continue running it. In the output, you will see the errors against primary that come from the intercept in Fiddler. Then you will see the switch to secondary storage. After the number of reads exceeds the threshold, you will see it switch back to primary. It does this repeatedly. 
 
 8. Pause the running application again. Go back into Fiddler and comment out the code 
 and save the script. Continue running the application. You will see it switch back to primary and run successfully against primary again.

@@ -17,6 +17,7 @@ using Microsoft.WindowsAzure.Storage.Blob;
 using Microsoft.WindowsAzure.Storage.RetryPolicies;
 using System;
 using System.IO;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace CircuitBreakerSample
@@ -151,7 +152,7 @@ namespace CircuitBreakerSample
             //    try to switch back to the primary. 
             //    After seeing that happen, pause this again and remove the intercepting Fiddler code. 
             //    Then you'll see it return to the primary and finish. 
-
+            //Console.WriteLine("\nPress the space bar to pause the application");
             for (int i = 0; i < 1000; i++ )
             {
                 if (blobClient.DefaultRequestOptions.LocationMode == LocationMode.SecondaryOnly)
@@ -165,7 +166,9 @@ namespace CircuitBreakerSample
 
                 // Set up an operation context for the downloading the blob.
                 OperationContext operation_context = new OperationContext();
-
+                CancellationTokenSource cancellationSource = new CancellationTokenSource();
+                Task task;
+                ConsoleKeyInfo keyinfo;
                 try
                 {
                     // Hook up the event handlers for the Retry event and the Request Completed event
@@ -174,8 +177,20 @@ namespace CircuitBreakerSample
                     operation_context.RequestCompleted += Operation_context_RequestCompleted;
 
                     // Download the file.
-                    await blockBlob.DownloadToFileAsync(string.Format("./CopyOf{0}", ImageToUpload), FileMode.Create, null, null, operation_context);
-
+                    task = blockBlob.DownloadToFileAsync(string.Format("./CopyOf{0}", ImageToUpload), FileMode.Create, null, null, operation_context);
+                    while (!task.IsCompleted)
+                    {
+                        if (Console.KeyAvailable)
+                        {
+                            keyinfo = Console.ReadKey(true);
+                            if (keyinfo.Key == ConsoleKey.Spacebar)
+                            {
+                                Console.Write("Press space bar to resume.");
+                                Console.ReadKey();
+                            }
+                        }
+                    }
+                    await task;
                     if (blobClient.DefaultRequestOptions.LocationMode == LocationMode.SecondaryOnly)
                     {
                         // This (commented-out) code shows how to retrieve the LastSyncTime, which is the last time in UTC that all modifications made to primary
