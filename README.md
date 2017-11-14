@@ -35,9 +35,20 @@ capture the events and switch back and forth.
  
 	This is used to modify the response from the service to indicate a failure, so it triggers the failover to secondary. 
 
-2. Edit the app.config file and change the connection string to point to your Azure Storage account. The account must have RA-GRS enabled, or the sample will fail. 
+2. Add an environment variable called **storageconnectionstring** string to your machine and put your storage connection string as the value. Change the `DefaultEndpointsProtocol` value from https to http to ensure Fiddler can intercept the traffic. The account must have RA-GRS enabled, or the sample will fail. 
 
-3. Run Fiddler. 
+    **Linux**
+    
+    ```bash
+    export storageconnectionstring="<yourconnectionstring>"
+    ```
+    **Windows**
+    
+    ```cmd
+    setx storageconnectionstring "<yourconnectionstring>"
+    ```
+
+3. Run Fiddler.
 
 4. Start the application in Visual Studio. It displays a console window showing the count of requests made against the storage service to download the file, and tells whether you are accessing the primary or secondary endpoint. You can also see this in the Fiddler trace. 
 
