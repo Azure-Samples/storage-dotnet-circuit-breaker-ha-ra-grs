@@ -35,17 +35,17 @@ capture the events and switch back and forth.
  
 	This is used to modify the response from the service to indicate a failure, so it triggers the failover to secondary. 
 
-2. Add an environment variable called **storageconnectionstring** string to your machine and put your storage connection string as the value. Change the `DefaultEndpointsProtocol` value from https to http to ensure Fiddler can intercept the traffic. The account must have RA-GRS enabled, or the sample will fail. 
+2. Add an environment variable called **storageconnectionstring** string to your machine and put your storage connection string as the value. Change the `DefaultEndpointsProtocol` value from **https** to **http** within the connection string to ensure Fiddler can intercept the traffic. The account must have RA-GRS enabled, or the sample will fail.
 
     **Linux**
     
     ```bash
-    export storageconnectionstring="<yourconnectionstring>"
+    export storageconnectionstring="DefaultEndpointsProtocol=http;AccountName=<mystorageaccount>;AccountKey=<myAccountKey>;EndpointSuffix=core.windows.net"
     ```
     **Windows**
     
     ```cmd
-    setx storageconnectionstring "<yourconnectionstring>"
+    setx storageconnectionstring "DefaultEndpointsProtocol=http;AccountName=<mystorageaccount>;AccountKey=<myAccountKey>;EndpointSuffix=core.windows.net"
     ```
 
 3. Run Fiddler.
