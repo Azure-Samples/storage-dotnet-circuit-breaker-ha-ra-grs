@@ -6,28 +6,18 @@ author: robinsh
 
 # Using the Circuit Breaker pattern in your HA apps with RA-GRS Storage
 
-This sample shows how to use the Circuit Breaker pattern with an RA-GRS storage account to switch your high-availability application to secondary storage when there is a problem with primary storage, and then switch back when primary storage becomes available 
-again. For more information, please see [Designing HA Apps with RA-GRS storage](
+This sample shows how to use the Circuit Breaker pattern with an RA-GRS storage account to switch your high-availability application to secondary storage when there is a problem with primary storage, and then switch back when primary storage becomes available again. For more information, please see [Designing HA Apps with RA-GRS storage](
 https://azure.microsoft.com/documentation/articles/storage-designing-ha-apps-with-ra-grs).
 
-If you don't have a Microsoft Azure subscription, you can
-get a FREE trial account <a href="http://go.microsoft.com/fwlink/?LinkId=330212">here</a>.
+If you don't have a Microsoft Azure subscription, you can get a FREE trial account <a href="http://go.microsoft.com/fwlink/?LinkId=330212">here</a>.
 
 ## How it works
 
-This application uploads a file to a container in blob storage to use for the test. 
-Then it proceeds to loop, downloading the file repeatedly, reading against primary storage. 
-If there is an error reading the primary, a retry is performed, and your threshold has 
-been exceeded, it will switch to secondary storage. 
+This application uploads a file to a container in blob storage to use for the test. Then it proceeds to loop, downloading the file repeatedly, reading against primary storage. If there is an error reading the primary, a retry is performed, and your threshold has been exceeded, it will switch to secondary storage.
 
-The application will continue to read from the secondary until it exceeds that threshold,
-and then it switches back to primary. 
+The application will continue to read from the secondary until it exceeds that threshold, and then it switches back to primary.
 
-In the case included here, the thresholds are arbitrary numbers for the count of allowable 
-retries against the primary before switching to the secondary, and the count of allowable 
-reads against the secondary before switching back. You can use any algorithm to 
-determine your thresholds; the purpose of this sample is just to show you how to 
-capture the events and switch back and forth. 
+In the case included here, the thresholds are arbitrary numbers for the count of allowable retries against the primary before switching to the secondary, and the count of allowable reads against the secondary before switching back. You can use any algorithm to determine your thresholds; the purpose of this sample is just to show you how to capture the events and switch back and forth.
 
 ## How to run the sample
 
@@ -65,10 +55,9 @@ capture the events and switch back and forth.
 
 7. Return to your application and press any key to continue running it. In the output, you will see the errors against primary that come from the intercept in Fiddler. Then you will see the switch to secondary storage. After the number of reads exceeds the threshold, you will see it switch back to primary. It does this repeatedly. 
 
-8. Pause the running application again. Go back into Fiddler and comment out the code 
-and save the script. Continue running the application. You will see it switch back to primary and run successfully against primary again.
+8. Pause the running application again. Go back into Fiddler and comment out the code and save the script. Continue running the application. You will see it switch back to primary and run successfully against primary again.
 
-If you run this repeatedly, be sure the script change is commented out before you start the application. 
+If you run this repeatedly, be sure the script change is commented out before you start the application.
 
 
 ## More information
