@@ -69,23 +69,11 @@ namespace CircuitBreakerSample
 
             try
             {
-                RunCircuitBreakerAsync().Wait();
+                RunCircuitBreakerAsync().GetAwaiter().GetResult();
             }
-            catch (AggregateException ae)
+            catch (Exception ex)
             {
-                ae.Handle((x) =>
-                {
-                    if (x is ArgumentNullException) // This we know how to handle.
-                    {
-                        Console.WriteLine("A connection string has not been defined in the system environment variables. Add a environment variable name 'storageconnectionstring' with the actual storage connection string as a value.");
-                    }
-                    else
-                    {
-                        Console.WriteLine(x.Message);
-                    }
-
-                    return true;
-                });
+                Console.WriteLine(ex.Message);
             }
 
         }
@@ -106,8 +94,8 @@ namespace CircuitBreakerSample
                 // in an environment variable on the machine running the application called storageconnectionstring.
                 // If the environment variable is created after the application is launched in a console or with Visual
                 // Studio, the shell needs to be closed and reloaded to take the environment variable into account.
-                string storage_connection_string = Environment.GetEnvironmentVariable("storageconnectionstring");
-                CloudStorageAccount storageAccount = CloudStorageAccount.Parse(storage_connection_string);
+                string storageConnectionString = Environment.GetEnvironmentVariable("storageconnectionstring");
+                CloudStorageAccount storageAccount = CloudStorageAccount.Parse(storageConnectionString);
                 blobClient = storageAccount.CreateCloudBlobClient();
 
                 // Make the container unique by using a GUID in the name.
@@ -133,8 +121,8 @@ namespace CircuitBreakerSample
                 await blockBlob.UploadFromFileAsync(ImageToUpload);
 
                 // Set the location mode to secondary so you can check just the secondary data center.
-                BlobRequestOptions bro = new BlobRequestOptions();
-                bro.LocationMode = LocationMode.SecondaryOnly;
+                BlobRequestOptions options = new BlobRequestOptions();
+                options.LocationMode = LocationMode.SecondaryOnly;
 
                 // Before proceeding, wait until the blob has been replicated to the secondary data center. 
                 // Loop and check for the presence of the blob once a second
@@ -146,7 +134,7 @@ namespace CircuitBreakerSample
 
                     Console.WriteLine("Attempt {0} to see if the blob has replicated to secondary yet.", counter);
 
-                    if (await blockBlob.ExistsAsync(bro, null))
+                    if (await blockBlob.ExistsAsync(options, null))
                     {
                         break;
                     }
@@ -154,6 +142,10 @@ namespace CircuitBreakerSample
                     // Wait a second, then loop around and try again.
                     // When it's finished replicating to the secondary, continue on.
                     await Task.Delay(1000);
+                }
+                if (counter >= 60)
+                {
+                    throw new Exception("Unable to find the image on the secondary endpoint.");
                 }
 
                 // Get a reference to the blob we uploaded earlier. 
@@ -195,17 +187,17 @@ namespace CircuitBreakerSample
                     }
 
                     // Set up an operation context for the downloading the blob.
-                    OperationContext operation_context = new OperationContext();
+                    OperationContext operationContext = new OperationContext();
 
                     try
                     {
                         // Hook up the event handlers for the Retry event and the Request Completed event
                         // These events are used to trigger the change from primary to secondary and back.
-                        operation_context.Retrying += Operation_context_Retrying;
-                        operation_context.RequestCompleted += Operation_context_RequestCompleted;
+                        operationContext.Retrying += OperationContextRetrying;
+                        operationContext.RequestCompleted += OperationContextRequestCompleted;
 
                         // Download the file.
-                        Task task = blockBlob.DownloadToFileAsync(string.Format("./CopyOf{0}", ImageToUpload), FileMode.Create, null, null, operation_context);
+                        Task task = blockBlob.DownloadToFileAsync(string.Format("./CopyOf{0}", ImageToUpload), FileMode.Create, null, null, operationContext);
 
                         // Allow user input to pause the application to implement simulated failures
                         while (!task.IsCompleted)
@@ -228,9 +220,9 @@ namespace CircuitBreakerSample
                             // For example, with a table, you can compare the entity date/time against the LastSyncTIme. If the entity date/time
                             //   is after the LastSyncTime, then there is some data still replicating from earlier.
                             // Here's the example of how to retrieve the LastSyncTime.
-                            //Microsoft.WindowsAzure.Storage.Shared.Protocol.ServiceStats serviceStats = blobClient.GetServiceStats();
-                            //string lastSyncTime = serviceStats.GeoReplication.LastSyncTime.HasValue ? serviceStats.GeoReplication.LastSyncTime.Value.ToString() : "empty";
-                            //Console.WriteLine("{0}Replication Status = {1}, Last Sync Time = {2}", Environment.NewLine, serviceStats.GeoReplication.Status, lastSyncTime);
+                            // var serviceStats = await blobClient.GetServiceStatsAsync();
+                            // string lastSyncTime = serviceStats.GeoReplication.LastSyncTime.HasValue ? serviceStats.GeoReplication.LastSyncTime.Value.ToString() : "empty";
+                            // Console.WriteLine("{0}Replication Status = {1}, Last Sync Time = {2}", Environment.NewLine, serviceStats.GeoReplication.Status, lastSyncTime);
                         }
                     }
                     catch (Exception ex)
@@ -241,8 +233,8 @@ namespace CircuitBreakerSample
                     finally
                     {
                         // Unhook the event handlers so everything can be garbage collected properly.
-                        operation_context.Retrying -= Operation_context_Retrying;
-                        operation_context.RequestCompleted -= Operation_context_RequestCompleted;
+                        operationContext.Retrying -= OperationContextRetrying;
+                        operationContext.RequestCompleted -= OperationContextRequestCompleted;
                     }
                 }
             }
@@ -286,7 +278,7 @@ namespace CircuitBreakerSample
         /// If it's pointing at the secondary, increment the read count. 
         /// If the number of reads has hit the threshold of how many reads you want to do against the secondary
         ///   before you switch back to primary, switch back and reset the secondaryReadCount. 
-        private static void Operation_context_RequestCompleted(object sender, RequestEventArgs e)
+        private static void OperationContextRequestCompleted(object sender, RequestEventArgs e)
         {
             if (blobClient.DefaultRequestOptions.LocationMode == LocationMode.SecondaryOnly)
             {
@@ -305,7 +297,7 @@ namespace CircuitBreakerSample
         /// If it has retried more times than allowed, and it's not already pointed to the secondary,
         ///   flip it to the secondary and reset the retry count.
         /// If it has retried more times than allowed, and it's already pointed to secondary, throw an exception. 
-        private static void Operation_context_Retrying(object sender, RequestEventArgs e)
+        private static void OperationContextRetrying(object sender, RequestEventArgs e)
         {
             retryCount++;
             Console.WriteLine("Retrying event because of failure reading the primary. RetryCount = " + retryCount);
