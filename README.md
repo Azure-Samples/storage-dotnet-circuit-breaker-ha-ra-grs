@@ -6,8 +6,7 @@ author: robinsh
 
 # Using the Circuit Breaker pattern in your HA apps with RA-GRS Storage
 
-This sample shows how to use the Circuit Breaker pattern with an RA-GRS storage account to switch your high-availability application to secondary storage when there is a problem with primary storage, and then switch back when primary storage becomes available again. For more information, please see [Designing HA Apps with RA-GRS storage](
-https://docs.microsoft.com/azure/storage/common/storage-designing-ha-apps-with-ragrs).
+This sample shows how to use the Circuit Breaker pattern with an RA-GRS storage account to switch your high-availability application to secondary storage when there is a problem with primary storage, and then switch back when primary storage becomes available again. For more information, please see [Designing HA Apps with RA-GRS storage](https://docs.microsoft.com/azure/storage/common/storage-designing-ha-apps-with-ragrs).
 
 If you don't have a Microsoft Azure subscription, you can get a FREE trial account <a href="http://go.microsoft.com/fwlink/?LinkId=330212">here</a>.
 
@@ -62,5 +61,5 @@ If you run this repeatedly, be sure the script change is commented out before yo
 
 ## More information
 - [About Azure storage accounts](https://docs.microsoft.com/azure/storage/storage-create-storage-account)
-- [Designing HA Apps with RA-GRS storage](https://docs.microsoft.com/azure/storage/storage-designing-ha-apps-with-ra-grs/)
+- [Designing HA Apps with RA-GRS storage](https://docs.microsoft.com/azure/storage/common/storage-designing-ha-apps-with-ragrs)
 - [Azure Storage Replication](https://docs.microsoft.com/azure/storage/storage-redundancy)
