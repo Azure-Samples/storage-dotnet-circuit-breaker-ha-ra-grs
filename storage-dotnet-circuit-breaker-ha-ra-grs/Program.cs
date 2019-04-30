@@ -22,9 +22,9 @@
 //SOFTWARE.
 //------------------------------------------------------------------------------
 
-using Microsoft.WindowsAzure.Storage;
-using Microsoft.WindowsAzure.Storage.Blob;
-using Microsoft.WindowsAzure.Storage.RetryPolicies;
+using Microsoft.Azure.Storage;
+using Microsoft.Azure.Storage.Blob;
+using Microsoft.Azure.Storage.RetryPolicies;
 using System;
 using System.IO;
 using System.Threading.Tasks;
