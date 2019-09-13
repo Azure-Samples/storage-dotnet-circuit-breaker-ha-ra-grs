@@ -1,7 +1,11 @@
 ---
-services: storage
-platforms: dotnet
-author: robinsh
+page_type: sample
+languages:
+- csharp
+products:
+- azure
+description: "This sample shows how to use the Circuit Breaker pattern with an RA-GRS storage account to switch your high-availability application to secondary storage when there is a problem with primary storage,"
+urlFragment: storage-dotnet-circuit-breaker-ha-ra-grs
 ---
 
 # Using the Circuit Breaker pattern in your HA apps with RA-GRS Storage
