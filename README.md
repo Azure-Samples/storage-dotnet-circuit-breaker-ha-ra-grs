@@ -40,7 +40,7 @@ In the case included here, the thresholds are arbitrary numbers for the count of
 
 3. Start the application in Visual Studio. It displays a console window showing the count of requests made against the storage service to download the file, and tells whether you are accessing the primary or secondary endpoint. You can also see this in the Fiddler trace.
 
-4. At the prompt to download the blob, press any key to see that request is made on the primary region endpoint.
+4. At the prompt to download the blob, press any key to see that request is made made successfully against the primary region endpoint.
 
 5. Before downloading the blob again, go to Fiddler and select Rules > Customize Rules. Search for the `OnBeforeResponse` function and insert the following code. (An example of the OnBeforeResponse method is included in the project in the Fiddler_script_v12.txt file.)
 
