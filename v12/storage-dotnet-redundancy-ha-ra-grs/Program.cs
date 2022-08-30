@@ -56,16 +56,13 @@ namespace StorageRedundancy
         /// </summary>
         private static async Task RunStorageRedundancyAsync()
         {
-            const string accountName = "pjstorageaccounttest";
-            const string accountKey = "XKqGyS9HSkIOz3BgdJpL0WPLb56Cn5x+2VgL7zgWO7kzaFEXf8bNvfJnUyEpvmk/r+OmGYF6KaiC+AStyzIUNw==";
+            // TODO: update accountName const to match your storage account name
+            const string accountName = "YOURSTORAGEACCOUNTNAME";
             Uri primaryAccountUri = new Uri($"https://{accountName}.blob.core.windows.net/");
             Uri secondaryAccountUri = new Uri($"https://{accountName}-secondary.blob.core.windows.net/");
 
             string blobName = "MyTestBlob";
-
             BlobContainerClient? containerClient = null;
-
-            StorageSharedKeyCredential sharedKeyCredential = new StorageSharedKeyCredential(accountName, accountKey);
 
             // Provide the client configuration options for connecting to Azure Blob Storage
             BlobClientOptions options = new BlobClientOptions()
@@ -92,8 +89,7 @@ namespace StorageRedundancy
             try
             {
                 // Create a client object for the Blob service with the options defined above
-                BlobServiceClient blobServiceClient = new BlobServiceClient(primaryAccountUri, sharedKeyCredential, options);
-                //BlobServiceClient blobServiceClient = new BlobServiceClient(primaryAccountUri, new DefaultAzureCredential(), options);
+                BlobServiceClient blobServiceClient = new BlobServiceClient(primaryAccountUri, new DefaultAzureCredential(), options);
 
                 CancellationTokenSource source = new CancellationTokenSource();
                 CancellationToken cancellationToken = source.Token;
