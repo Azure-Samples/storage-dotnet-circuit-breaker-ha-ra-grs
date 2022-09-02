@@ -15,7 +15,8 @@ The script change below must be commented out when you first run the application
         }
         
 	// Simulate data center failure
-	// After successfully downloading the blob, uncomment the lines below and save the script.
+	// After successfully downloading the blob, uncomment the lines below and save the script. Sometimes
+	// you may need to restart Fiddler after uncommenting and saving the script.
 	// It will intercept the (probably successful) responses and send back a 503 error. 
 	// When you're ready to stop sending back errors, comment these lines of script out again 
 	//     and save the changes.
