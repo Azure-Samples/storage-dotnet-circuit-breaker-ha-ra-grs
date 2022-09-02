@@ -1,5 +1,8 @@
-﻿using Azure;
+﻿using System.Diagnostics.Tracing;
+using System.IO;
+using Azure;
 using Azure.Core;
+using Azure.Core.Diagnostics;
 using Azure.Core.Pipeline;
 using Azure.Identity;
 using Azure.Storage;
@@ -25,17 +28,24 @@ namespace StorageRedundancy
         public override async ValueTask ProcessAsync(HttpMessage message, ReadOnlyMemory<HttpPipelinePolicy> pipeline)
         {
             string? host = message.Request.Uri.Host;
+            
             if (host is not null)
             {
                 string region = host.Contains("-secondary") ? "secondary" : "primary";
                 Console.WriteLine($"Request sent to {region} region endpoint");
             }
             await ProcessNextAsync(message, pipeline);
+
+            
         }
     }
 
     public class Program
     {
+        static int retryCount = 0;
+        const int retryThreshold = 3;
+        static int secondaryReadCount = 0;
+        const int secondaryReadThreshold = 5;
         static void Main(string[] args)
         {
             Console.WriteLine("Azure Storage redundancy sample\n ");
@@ -75,6 +85,11 @@ namespace StorageRedundancy
                     MaxDelay = TimeSpan.FromSeconds(10)  //The maximum permissible delay between retry attempts
                 },
 
+                Diagnostics =
+                {
+                    IsLoggingContentEnabled = true,
+                },
+
                 // If the GeoRedundantSecondaryUri property is set, the secondary Uri will be used for GET or HEAD requests during retries.
                 // If the status of the response from the secondary Uri is a 404, then subsequent retries for the request will not use the
                 // secondary Uri again, as this indicates that the resource may not have propagated there yet.
@@ -82,14 +97,37 @@ namespace StorageRedundancy
                 GeoRedundantSecondaryUri = secondaryAccountUri
             };
 
+            BlobClientOptions optionsSecondary = new BlobClientOptions()
+            {
+                Retry = {
+                    Delay = TimeSpan.FromSeconds(2),     //The delay between retry attempts for a fixed approach or the delay on which to base 
+                                                         //calculations for a backoff-based approach
+                    MaxRetries = 5,                      //The maximum number of retry attempts before giving up
+                    Mode = RetryMode.Exponential,        //The approach to use for calculating retry delays
+                    MaxDelay = TimeSpan.FromSeconds(10)  //The maximum permissible delay between retry attempts
+                },
+            };
+
             // Add an HttpPipelinePolicy for debugging purposes
             // This will help us see which endpoint each retry request is being sent to
             options.AddPolicy(new ShowRequestInfoPolicy(), Azure.Core.HttpPipelinePosition.PerRetry);
+            optionsSecondary.AddPolicy(new ShowRequestInfoPolicy(), Azure.Core.HttpPipelinePosition.PerRetry);
 
             try
             {
-                // Create a client object for the Blob service with the options defined above
+                // Create a client object for the blob service with the options defined above 
                 BlobServiceClient blobServiceClient = new BlobServiceClient(primaryAccountUri, new DefaultAzureCredential(), options);
+
+                // Create a client object for the blob service which points to the secondary region endpoint
+                BlobServiceClient blobServiceClientSecondary = new BlobServiceClient(secondaryAccountUri, new DefaultAzureCredential(), optionsSecondary);
+
+                // Get some statistics about the secondary region when using RA-GRS or RA-GZRS
+                Response<BlobServiceStatistics> responseStats = await blobServiceClientSecondary.GetStatisticsAsync();
+                if (responseStats.Value.GeoReplication.Status == BlobGeoReplicationStatus.Live)
+                {
+                    Console.WriteLine("Secondary region is live");
+                    Console.WriteLine($"Last sync time: {responseStats.Value.GeoReplication.LastSyncedOn}");
+                }
 
                 CancellationTokenSource source = new CancellationTokenSource();
                 CancellationToken cancellationToken = source.Token;
@@ -98,7 +136,7 @@ namespace StorageRedundancy
                 string containerName = $"container-{Guid.NewGuid()}";
 
                 // Create the container and return a container client object
-                Console.WriteLine("Creating container");
+                Console.WriteLine("\nCreating container");
                 containerClient = await blobServiceClient.CreateBlobContainerAsync(containerName, PublicAccessType.None, null, cancellationToken);
 
                 if (await containerClient.ExistsAsync())
@@ -114,13 +152,70 @@ namespace StorageRedundancy
                 Console.WriteLine($"\nUploading blob: {blobName}");
                 await blobClient.UploadAsync(BinaryData.FromString("If at first you don't succeed, hopefully you have a good retry policy.").ToStream(), overwrite: true);
 
+                // Check to see if the blob has been replicated to the secondary data center
+                BlobClient blobSecondary = blobServiceClientSecondary.GetBlobContainerClient(containerName).GetBlobClient(blobName);
+                int counter = 0;
+                Console.WriteLine("Checking secondary region endpoint to see if the blob has replicated");
+                while (counter < 60)
+                {
+                    counter++;
+
+                    Console.WriteLine("Attempt {0} to see if the blob has replicated", counter);
+
+                    if (await blobSecondary.ExistsAsync())
+                    {
+                        // The blob is found, so break the loop and continue on
+                        Console.WriteLine("Blob has replicated to secondary region");
+                        break;
+                    }
+
+                    // If the blob is not replicated yet, wait a second then try again
+                    await Task.Delay(1000);
+                }
+                if (counter >= 60)
+                {
+                    throw new Exception("Unable to find the blob in the secondary region");
+                }
+
                 // Download the blob
                 Console.WriteLine("\nPress any key to download the blob - Esc to exit");
 
+                // Add an event listener to listen to events produced by Azure SDK client libraries
+                // This is a basic example to keep track of request retries
+                using AzureEventSourceListener listener = new AzureEventSourceListener((args, message) =>
+                {
+                    if (args.EventSource.Name.StartsWith("Azure-Core") && args.EventName == "RequestRetrying")
+                    {
+                        retryCount++;
+                    }
+                }, EventLevel.LogAlways);
+
                 while (Console.ReadKey().Key != ConsoleKey.Escape)
                 {
+                    Response<BlobDownloadInfo> response;
+
                     Console.WriteLine($"\nDownloading blob {blobName}:");
-                    Response<BlobDownloadInfo> response = await blobClient.DownloadAsync();
+
+                    // If the number of retries exceeds the threshold, switch to the BlobServiceClient
+                    // pointing at the seconardary region endpoint for read requests
+                    if (retryCount > retryThreshold)
+                    {
+                        response = await blobSecondary.DownloadAsync();
+                        secondaryReadCount++;
+
+                        // If the number of read requests against the secondary region endpoint exceeds
+                        // the threshold, reset the variables and try the primary region endpoint again
+                        if (secondaryReadCount > secondaryReadThreshold)
+                        {
+                            retryCount = 0;
+                            secondaryReadCount = 0;
+                        }
+                    }
+                    else
+                    {
+                        response = await blobClient.DownloadAsync();
+                    }
+
                     BlobDownloadInfo downloadInfo = response.Value;
 
                     // Write out the response status
@@ -129,9 +224,10 @@ namespace StorageRedundancy
                     // Write out the blob data
                     Console.Write("Blob data: ");
                     Console.WriteLine((await BinaryData.FromStreamAsync(downloadInfo.Content)).ToString());
+                    Console.WriteLine($"\nRetry count: {retryCount}");
+                    Console.WriteLine($"Secondary region read count: {secondaryReadCount}");
 
-                    Console.WriteLine("\nModify OnBeforeResponse() in Fiddler Script if you wish to test retries on secondary storage");
-                    Console.WriteLine("Press any key to download the blob again - Esc to exit");
+                    Console.WriteLine("\nPress any key to download the blob again - Esc to exit");
                 }
             }
             catch (RequestFailedException e)
