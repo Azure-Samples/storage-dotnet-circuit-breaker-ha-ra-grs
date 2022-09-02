@@ -197,7 +197,7 @@ namespace StorageRedundancy
                     Console.WriteLine($"\nDownloading blob {blobName}:");
 
                     // If the number of retries exceeds the threshold, switch to the BlobServiceClient
-                    // pointing at the seconardary region endpoint for read requests
+                    // pointing at the secondary region endpoint for read requests
                     if (retryCount > retryThreshold)
                     {
                         response = await blobSecondary.DownloadAsync();
