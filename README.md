@@ -47,7 +47,8 @@ In the case included here, the thresholds are arbitrary numbers for the count of
 5. Before downloading the blob again, go to Fiddler and select Rules > Customize Rules. Search for the `OnBeforeResponse` function and insert the following code. (An example of the OnBeforeResponse method is included in the project in the Fiddler_script_v12.txt file.)
 
 ```
-if ((oSession.hostname == "YOURSTORAGEACCOUNTNAME.blob.core.windows.net")) {
+if (oSession.hostname == "YOURSTORAGEACCOUNTNAME.blob.core.windows.net")
+{
    oSession.responseCode = 503;  
 }
 ```
