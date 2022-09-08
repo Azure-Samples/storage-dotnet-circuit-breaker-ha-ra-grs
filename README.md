@@ -20,7 +20,7 @@ If you don't have a Microsoft Azure subscription, you can get a FREE trial accou
 
 This application uploads a blob by creating a Stream object, then uploads the stream to a container for testing. It then enters a loop with a prompt to download the blob, reading from primary storage. If there is a retryable error reading from the primary region, a retry of the read request is performed against secondary storage.
 
-The application will also track retry requests through an event listener. If the number of retries exceeds the threshold set in the code, the app will switch to send read requests to secondary storage. It will continue to do this until a secondary read threshold is met, at which point the requests will go back to the primary region. To exit the loop and clean up resources, press the `Esc` key at the prompt.
+To exit the loop and clean up resources, press the `Esc` key at the prompt.
 
 # [.NET v11 SDK](#tab/dotnet11)
 
@@ -55,7 +55,7 @@ if (oSession.hostname == "YOURSTORAGEACCOUNTNAME.blob.core.windows.net")
 
 Replace YOURSTORAGEACCOUNTNAME with the name of your storage account and make sure the above code is uncommented. Save your changes to the script. Sometimes, you may need to restart Fiddler in order for the script changes to be picked up by the app.
 
-6. Return to your application. At the prompt to download the blob, press any key to resume the application. In the output, you will see the request sent to the primary region. This request will fail because Fiddler has modified the response to return a 503, then the retry request is sent to the secondary region and will likely succeed. You can continue to download the blob at the prompt to test various scenarios.
+6. Return to your application. At the prompt, press any key to resume the application and download the blob. In the output, you will see the request is sent to the primary region. This request will fail because Fiddler has modified the response to return a 503. The retry request is sent to the secondary region and will likely succeed. You can continue to download the blob at the prompt to test various scenarios.
 
 7. When you are finished testing, go back into Fiddler, comment out the code, and save the script. At the prompt, press any key to download the blob. The output shows that the request to the primary region is successful again.
 
