@@ -1,0 +1,31 @@
+/*THIS FIDDLER SCRIPT ACTS TO SIMULATE FAULTS IN THE PRIMARY REGION
+Open Fiddler. 
+Go to Rules > Customize Rules.
+Search for the OnBeforeResponse method. Add the commented-out code below.
+Make sure the hostname is YOURSTORAGEACCOUNTNAME.blob.core.windows.net,
+replacing YOURSTORAGEACCOUNTNAME with the name of your storage account. 
+Start the app, then download the blob to see that it reads from the primary region.
+Then uncomment the if clause to intercept the response and return a 503 error when the blob is downloaded again.
+The script change below must be commented out when you first run the application.
+*/
+
+    static function OnBeforeResponse(oSession: Session) {
+        if (m_Hide304s && oSession.responseCode == 304) {
+            oSession["ui-hide"] = "true";
+        }
+        
+	// Simulate data center failure
+	// After successfully downloading the blob, uncomment the lines below and save the script. Sometimes
+	// you may need to restart Fiddler after uncommenting and saving the script.
+	// It will intercept the (probably successful) responses and send back a 503 error. 
+	// When you're ready to stop sending back errors, comment these lines of script out again 
+	//     and save the changes.
+	
+	/*
+	if ((oSession.hostname == "YOURSTORAGEACCOUNTNAME.blob.core.windows.net") 
+	&& (oSession.PathAndQuery.Contains("HelloWorld"))) {
+	   oSession.responseCode = 503;  
+        }
+	*/
+
+    }
